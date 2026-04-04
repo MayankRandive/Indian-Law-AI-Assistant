@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indian Law Assistant</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+
+<div class="main">
+
+<div class="header" onclick="goHome()">
+
+<div class="logo">⚖️</div>
+
+<div>
+<div><b>Indian Law Assistant</b></div>
+<div class="subtitle">
+Legal AI Assistant
+</div>
+</div>
+
+</div>
+
+
+<div class="chat-area" id="chatArea">
+
+<div class="chat" id="chat">
+
+<div class="landing">
+
+<div class="landing-icon">⚖️</div>
+
+<h2>Know Your Rights</h2>
+
+<p class="subtitle">
+Ask about Indian law.
+</p>
+
+<div class="suggestions">
+
+<div class="card" onclick="askExample(this)">
+Section 420 IPC
+</div>
+
+<div class="card" onclick="askExample(this)">
+Attempt to murder punishment
+</div>
+
+<div class="card" onclick="askExample(this)">
+Cyber crime complaint
+</div>
+
+<div class="card" onclick="askExample(this)">
+Arrest rights
+</div>
+
+</div>
+
+</div>
+
+<div class="chat-spacer"></div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="input-floating">
+
+<div class="input-box">
+
+<input id="input" placeholder="Ask about Indian law...">
+
+<button onclick="send()">Send</button>
+
+</div>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
