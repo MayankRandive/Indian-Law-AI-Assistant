@@ -1,26 +1,33 @@
 from flask import Flask, render_template, request, jsonify
 from search import search_law
-import requests
+from groq import Groq
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
-# -------- OLLAMA -------- #
-def ask_ollama(prompt):
-    response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={
-            "model": "mistral",
-            "prompt": prompt,
-            "stream": False
-        }
+# -------- GROQ SETUP -------- #
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def ask_llm(prompt):
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
-    return response.json()["response"]
+    return response.choices[0].message.content
+
 
 # -------- ROUTES -------- #
 
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/ask", methods=["POST"])
 def ask():
@@ -31,7 +38,8 @@ def ask():
     if not results:
         return jsonify({"answer": "No relevant law found."})
 
-    context = "\n\n".join([item["content"] for item in results])
+    # NOTE: your search returns "text", not "content"
+    context = "\n\n".join([item["text"] for item in results])
 
     prompt = f"""
 You are an expert Indian legal assistant.
@@ -48,10 +56,12 @@ Question: {user_question}
 Answer in simple language:
 """
 
-    answer = ask_ollama(prompt)
+    answer = ask_llm(prompt)
 
     return jsonify({"answer": answer})
 
 
+# -------- RUN APP -------- #
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
