@@ -1,13 +1,7 @@
-from flask import Flask, render_template, request, jsonify
+import gradio as gr
 from search import search_law
 from groq import Groq
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-app = Flask(__name__)
 
 # -------- GROQ SETUP -------- #
 api_key = os.getenv("GROQ_API_KEY")
@@ -28,24 +22,14 @@ def ask_llm(prompt):
     return response.choices[0].message.content
 
 
-# -------- ROUTES -------- #
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
-@app.route("/ask", methods=["POST"])
-def ask():
+# -------- MAIN FUNCTION -------- #
+def legal_ai(question):
     try:
-        user_question = request.json.get("question")
-
-        results = search_law(user_question, top_k=3)
+        results = search_law(question, top_k=3)
 
         if not results:
-            return jsonify({"answer": "No relevant law found."})
+            return "No relevant law found."
 
-        # Use correct key from your search.py
         context = "\n\n".join([item["text"] for item in results])
 
         prompt = f"""
@@ -58,21 +42,25 @@ Do NOT make up laws.
 {context}
 ---------------------
 
-Question: {user_question}
+Question: {question}
 
 Answer in simple language:
 """
 
         answer = ask_llm(prompt)
-
-        return jsonify({"answer": answer})
+        return answer
 
     except Exception as e:
-        return jsonify({"answer": f"Error: {str(e)}"})
+        return f"Error: {str(e)}"
 
 
-# -------- RUN APP -------- #
+# -------- GRADIO UI -------- #
+iface = gr.Interface(
+    fn=legal_ai,
+    inputs=gr.Textbox(lines=2, placeholder="Ask about Indian law..."),
+    outputs="text",
+    title="⚖️ Indian Law AI Assistant",
+    description="Ask any question about Indian law"
+)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+iface.launch()
