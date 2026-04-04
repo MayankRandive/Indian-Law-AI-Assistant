@@ -10,7 +10,13 @@ load_dotenv()
 app = Flask(__name__)
 
 # -------- GROQ SETUP -------- #
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+api_key = os.getenv("GROQ_API_KEY")
+
+if not api_key:
+    raise ValueError("GROQ_API_KEY is not set")
+
+client = Groq(api_key=api_key)
+
 
 def ask_llm(prompt):
     response = client.chat.completions.create(
@@ -31,17 +37,18 @@ def home():
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_question = request.json.get("question")
+    try:
+        user_question = request.json.get("question")
 
-    results = search_law(user_question, top_k=3)
+        results = search_law(user_question, top_k=3)
 
-    if not results:
-        return jsonify({"answer": "No relevant law found."})
+        if not results:
+            return jsonify({"answer": "No relevant law found."})
 
-    # NOTE: your search returns "text", not "content"
-    context = "\n\n".join([item["text"] for item in results])
+        # Use correct key from your search.py
+        context = "\n\n".join([item["text"] for item in results])
 
-    prompt = f"""
+        prompt = f"""
 You are an expert Indian legal assistant.
 
 Use ONLY the legal context below.
@@ -56,12 +63,16 @@ Question: {user_question}
 Answer in simple language:
 """
 
-    answer = ask_llm(prompt)
+        answer = ask_llm(prompt)
 
-    return jsonify({"answer": answer})
+        return jsonify({"answer": answer})
+
+    except Exception as e:
+        return jsonify({"answer": f"Error: {str(e)}"})
 
 
 # -------- RUN APP -------- #
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
