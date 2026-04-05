@@ -12,6 +12,7 @@ client = Groq(api_key=api_key)
 
 # -------- LLM CALL -------- #
 def ask_llm(prompt):
+    """Send prompt to Groq LLM and return response."""
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -24,14 +25,14 @@ def ask_llm(prompt):
 
 # -------- MAIN FUNCTION -------- #
 def legal_ai(question):
+    """Search law and ask LLM to answer in simple language."""
     if not question.strip():
-        return "⚠️ Please enter a question.", ""
+        return "⚠️ Please enter a question."
 
     try:
         results = search_law(question, top_k=3)
-
         if not results:
-            return "No relevant law found.", ""
+            return "No relevant law found."
 
         # -------- CONTEXT -------- #
         context = "\n\n".join([item.get("text", "") for item in results])
@@ -50,6 +51,7 @@ Question: {question}
 
 Answer in simple language:
 """
+
         answer = ask_llm(prompt) or "No response from LLM."
 
         # -------- SOURCES -------- #
@@ -60,17 +62,17 @@ Answer in simple language:
             sec = metadata.get("section_number", "N/A")
             sources.append(f"{law} - Section {sec}")
 
-        source_text = "\n".join(list(set([str(s) for s in sources]))) if sources else "No sources available"
+        source_text = "\n".join(sorted(set(sources))) if sources else "No sources available"
 
-        return answer, source_text
+        return f"{answer}\n\n📚 Sources:\n{source_text}"
 
     except Exception as e:
-        return f"Error: {str(e)}", ""
+        return f"Error: {str(e)}"
 
-# -------- UI -------- #
+# -------- GRADIO UI -------- #
 with gr.Blocks() as demo:
     gr.Markdown("# ⚖️ Indian Law AI Assistant")
-    gr.Markdown("Ask any question about Indian law")
+    gr.Markdown("Ask any question about Indian law.")
 
     question_input = gr.Textbox(
         placeholder="Ask about Indian law...",
@@ -82,27 +84,22 @@ with gr.Blocks() as demo:
 
     answer_output = gr.Textbox(
         label="Answer",
-        lines=8
-    )
-
-    sources_output = gr.Textbox(
-        label="Sources",
-        lines=4
+        lines=12
     )
 
     submit_btn.click(
         legal_ai,
         inputs=question_input,
-        outputs=[answer_output, sources_output]
+        outputs=answer_output
     )
 
     question_input.submit(
         legal_ai,
         inputs=question_input,
-        outputs=[answer_output, sources_output]
+        outputs=answer_output
     )
 
 # -------- LAUNCH (RENDER READY) -------- #
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    demo.launch(server_name="0.0.0.0", server_port=port, share=True)
+    demo.launch(server_port=port, share=True)
