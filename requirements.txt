@@ -5,4 +5,4 @@ sentence-transformers==2.2.2
 numpy
 scikit-learn
 huggingface-hub==0.19.4
-torch
+torch==2.2.2
