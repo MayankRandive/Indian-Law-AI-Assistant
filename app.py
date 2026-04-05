@@ -19,6 +19,7 @@ def ask_llm(prompt):
     )
     return response.choices[0].message.content
 
+
 # -------- MAIN FUNCTION -------- #
 def legal_ai(question):
     try:
@@ -28,7 +29,7 @@ def legal_ai(question):
             return "No relevant law found."
 
         # Context for LLM
-        context = "\n\n".join([item["text"] for item in results])
+        context = "\n\n".join([item.get("text", "") for item in results])
 
         prompt = f"""
 You are an expert Indian legal assistant.
@@ -50,19 +51,21 @@ Answer in simple language:
         if not answer:
             answer = "No response from LLM."
 
-        # Sources
+        # -------- SAFE SOURCES (NO CRASH) -------- #
         sources = []
         for item in results:
-            law = item["metadata"].get("law", "Unknown Law")
-            sec = item["metadata"].get("section_number", "N/A")
+            metadata = item.get("metadata", {})  # safe access
+            law = metadata.get("law", "Unknown Law")
+            sec = metadata.get("section_number", "N/A")
             sources.append(f"{law} - Section {sec}")
 
-        source_text = "\n".join(set(sources))
+        source_text = "\n".join(set(sources)) if sources else "No sources available"
 
         return f"{answer}\n\n📚 Sources:\n{source_text}"
 
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 # -------- UI -------- #
 with gr.Blocks() as demo:
@@ -94,7 +97,8 @@ with gr.Blocks() as demo:
         outputs=answer_output
     )
 
-# -------- LAUNCH (FIXED FOR RENDER) -------- #
+
+# -------- LAUNCH (RENDER FIX) -------- #
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))  # IMPORTANT FIX
+    port = int(os.environ.get("PORT", 10000))  # safer default
     demo.launch(server_name="0.0.0.0", server_port=port)
