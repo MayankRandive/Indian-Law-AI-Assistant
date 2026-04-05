@@ -22,7 +22,6 @@ def ask_llm(prompt):
     except Exception as e:
         return f"LLM Error: {str(e)}"
 
-
 # -------- MAIN FUNCTION -------- #
 def legal_ai(question):
     if not question.strip():
@@ -72,7 +71,6 @@ Answer in simple language:
     except Exception as e:
         return f"Error: {str(e)}"
 
-
 # -------- UI -------- #
 with gr.Blocks() as demo:
     gr.Markdown("# ⚖️ Indian Law AI Assistant")
@@ -102,7 +100,6 @@ with gr.Blocks() as demo:
         inputs=question_input,
         outputs=answer_output
     )
-
 
 # -------- LAUNCH (RENDER READY) -------- #
 if __name__ == "__main__":
