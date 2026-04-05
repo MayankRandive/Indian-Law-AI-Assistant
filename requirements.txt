@@ -1,5 +1,6 @@
-gradio
+gradio==3.40.0
 groq
 sentence-transformers
 numpy
 scikit-learn
+huggingface-hub
