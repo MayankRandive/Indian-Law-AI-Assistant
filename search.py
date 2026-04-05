@@ -1,34 +1,29 @@
 import numpy as np
-import os
-import pickle
 
-# -------- LOAD DATA -------- #
-# Make sure these files exist in your repo
-EMBEDDINGS_PATH = "embeddings.pkl"
-DOCUMENTS_PATH = "documents.pkl"
+# Dummy data (replace with your real embeddings + documents later)
+documents = [
+    "Section 66 of IT Act deals with computer-related offences.",
+    "IPC Section 420 relates to cheating and dishonesty.",
+    "Article 21 gives right to life and personal liberty."
+]
 
-if not os.path.exists(EMBEDDINGS_PATH) or not os.path.exists(DOCUMENTS_PATH):
-    raise ValueError("Embeddings or documents file not found")
-
-with open(EMBEDDINGS_PATH, "rb") as f:
-    embeddings = pickle.load(f)
-
-with open(DOCUMENTS_PATH, "rb") as f:
-    documents = pickle.load(f)
+# Dummy embeddings (just for avoiding crash if real ones not loaded)
+embeddings = [np.random.rand(384) for _ in documents]
 
 # -------- SIMILARITY FUNCTION -------- #
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 # -------- SEARCH FUNCTION -------- #
-def search_law(query_embedding, top_k=3):
-    similarities = []
+def search_law(query, top_k=3):
+    # For now, generate a fake embedding for query
+    query_embedding = np.random.rand(384)
 
+    similarities = []
     for i, emb in enumerate(embeddings):
         sim = cosine_similarity(query_embedding, emb)
         similarities.append((sim, i))
 
-    # Sort by similarity (highest first)
     similarities.sort(reverse=True)
 
     results = []
