@@ -65,7 +65,7 @@ Answer in simple language:
             sec = metadata.get("section_number", "N/A")
             sources.append(f"{law} - Section {sec}")
 
-        source_text = "\n".join(set(sources)) if sources else "No sources available"
+        source_text = "\n".join(list(set([str(s) for s in sources]))) if sources else "No sources available"
 
         return f"{answer}\n\n📚 Sources:\n{source_text}"
 
@@ -107,4 +107,4 @@ with gr.Blocks() as demo:
 # -------- LAUNCH (RENDER READY) -------- #
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    demo.launch(server_name="0.0.0.0", server_port=port)
+    demo.launch(server_name="0.0.0.0", server_port=port, share=True)
