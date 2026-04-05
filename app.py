@@ -12,23 +12,29 @@ client = Groq(api_key=api_key)
 
 # -------- LLM CALL -------- #
 def ask_llm(prompt):
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=500
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"LLM Error: {str(e)}"
 
 
 # -------- MAIN FUNCTION -------- #
 def legal_ai(question):
+    if not question.strip():
+        return "⚠️ Please enter a question."
+
     try:
         results = search_law(question, top_k=3)
 
         if not results:
             return "No relevant law found."
 
-        # Context for LLM
+        # -------- CONTEXT -------- #
         context = "\n\n".join([item.get("text", "") for item in results])
 
         prompt = f"""
@@ -51,10 +57,10 @@ Answer in simple language:
         if not answer:
             answer = "No response from LLM."
 
-        # -------- SAFE SOURCES (NO CRASH) -------- #
+        # -------- SOURCES -------- #
         sources = []
         for item in results:
-            metadata = item.get("metadata", {})  # safe access
+            metadata = item.get("metadata", {})
             law = metadata.get("law", "Unknown Law")
             sec = metadata.get("section_number", "N/A")
             sources.append(f"{law} - Section {sec}")
@@ -98,7 +104,7 @@ with gr.Blocks() as demo:
     )
 
 
-# -------- LAUNCH (RENDER FIX) -------- #
+# -------- LAUNCH (RENDER READY) -------- #
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # safer default
+    port = int(os.environ.get("PORT", 10000))
     demo.launch(server_name="0.0.0.0", server_port=port)

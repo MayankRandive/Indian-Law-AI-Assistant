@@ -1,25 +1,42 @@
 import numpy as np
+import json
+import os
+from sentence_transformers import SentenceTransformer
 
-# Dummy data (replace with your real embeddings + documents later)
-documents = [
-    "Section 66 of IT Act deals with computer-related offences.",
-    "IPC Section 420 relates to cheating and dishonesty.",
-    "Article 21 gives right to life and personal liberty."
-]
+# -------- LOAD MODEL -------- #
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Dummy embeddings (just for avoiding crash if real ones not loaded)
-embeddings = [np.random.rand(384) for _ in documents]
+# -------- FILE PATHS -------- #
+EMBEDDINGS_PATH = "embeddings.npy"
+DOCUMENTS_PATH = "law_chunks_structured.json"
 
-# -------- SIMILARITY FUNCTION -------- #
+# -------- LOAD FILES -------- #
+if not os.path.exists(EMBEDDINGS_PATH):
+    raise ValueError("embeddings.npy not found")
+
+if not os.path.exists(DOCUMENTS_PATH):
+    raise ValueError("law_chunks_structured.json not found")
+
+embeddings = np.load(EMBEDDINGS_PATH)
+
+with open(DOCUMENTS_PATH, "r", encoding="utf-8") as f:
+    documents = json.load(f)
+
+# -------- SAFETY CHECK -------- #
+if len(embeddings) != len(documents):
+    raise ValueError("Mismatch between embeddings and documents length")
+
+# -------- SIMILARITY -------- #
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 # -------- SEARCH FUNCTION -------- #
 def search_law(query, top_k=3):
-    # For now, generate a fake embedding for query
-    query_embedding = np.random.rand(384)
+    # ✅ REAL embedding now
+    query_embedding = model.encode(query)
 
     similarities = []
+
     for i, emb in enumerate(embeddings):
         sim = cosine_similarity(query_embedding, emb)
         similarities.append((sim, i))
@@ -28,9 +45,15 @@ def search_law(query, top_k=3):
 
     results = []
     for sim, idx in similarities[:top_k]:
+        doc = documents[idx]
+
         results.append({
-            "text": documents[idx],
-            "score": float(sim)
+            "text": doc.get("text", ""),
+            "score": float(sim),
+            "metadata": {
+                "law": doc.get("law", "Unknown Law"),
+                "section_number": doc.get("section_number", "N/A")
+            }
         })
 
     return results
