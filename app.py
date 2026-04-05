@@ -13,7 +13,7 @@ client = Groq(api_key=api_key)
 # -------- LLM CALL -------- #
 def ask_llm(prompt):
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # best available model
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=500
     )
@@ -50,7 +50,7 @@ Answer in simple language:
         if not answer:
             answer = "No response from LLM."
 
-        # 🔥 Add source info (very important upgrade)
+        # Sources
         sources = []
         for item in results:
             law = item["metadata"].get("law", "Unknown Law")
@@ -64,17 +64,16 @@ Answer in simple language:
     except Exception as e:
         return f"Error: {str(e)}"
 
-# -------- UI (CLEAN + MODERN) -------- #
+# -------- UI -------- #
 with gr.Blocks() as demo:
     gr.Markdown("# ⚖️ Indian Law AI Assistant")
     gr.Markdown("Ask any question about Indian law")
 
-    with gr.Row():
-        question_input = gr.Textbox(
-            placeholder="Ask about Indian law...",
-            lines=3,
-            label="Your Question"
-        )
+    question_input = gr.Textbox(
+        placeholder="Ask about Indian law...",
+        lines=3,
+        label="Your Question"
+    )
 
     submit_btn = gr.Button("Ask")
 
@@ -83,7 +82,6 @@ with gr.Blocks() as demo:
         lines=12
     )
 
-    # Button + Enter support
     submit_btn.click(
         legal_ai,
         inputs=question_input,
@@ -96,6 +94,7 @@ with gr.Blocks() as demo:
         outputs=answer_output
     )
 
-# -------- LAUNCH -------- #
+# -------- LAUNCH (FIXED FOR RENDER) -------- #
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=10000)
+    port = int(os.environ.get("PORT", 7860))  # IMPORTANT FIX
+    demo.launch(server_name="0.0.0.0", server_port=port)
