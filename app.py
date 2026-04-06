@@ -1,43 +1,39 @@
-import gradio as gr
+from flask import Flask, render_template, request, jsonify
 from search import search_law
-from groq import Groq
-import os
+import requests
 
-# -------- GROQ SETUP -------- #
-api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    raise ValueError("GROQ_API_KEY is not set")
+app = Flask(__name__)
 
-client = Groq(api_key=api_key)
+# -------- OLLAMA -------- #
+def ask_ollama(prompt):
+    response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": "mistral",
+            "prompt": prompt,
+            "stream": False
+        }
+    )
+    return response.json()["response"]
 
-# -------- LLM CALL -------- #
-def ask_llm(prompt):
-    """Send prompt to Groq LLM and return response."""
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=500
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"LLM Error: {str(e)}"
+# -------- ROUTES -------- #
 
-# -------- MAIN FUNCTION -------- #
-def legal_ai(question):
-    """Search law and ask LLM to answer in simple language."""
-    if not question.strip():
-        return "⚠️ Please enter a question."
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-    try:
-        results = search_law(question, top_k=3)
-        if not results:
-            return "No relevant law found."
+@app.route("/ask", methods=["POST"])
+def ask():
+    user_question = request.json.get("question")
 
-        # -------- CONTEXT -------- #
-        context = "\n\n".join([item.get("text", "") for item in results])
+    results = search_law(user_question, top_k=3)
 
-        prompt = f"""
+    if not results:
+        return jsonify({"answer": "No relevant law found."})
+
+    context = "\n\n".join([item["content"] for item in results])
+
+    prompt = f"""
 You are an expert Indian legal assistant.
 
 Use ONLY the legal context below.
@@ -47,59 +43,15 @@ Do NOT make up laws.
 {context}
 ---------------------
 
-Question: {question}
+Question: {user_question}
 
 Answer in simple language:
 """
 
-        answer = ask_llm(prompt) or "No response from LLM."
+    answer = ask_ollama(prompt)
 
-        # -------- SOURCES -------- #
-        sources = []
-        for item in results:
-            metadata = item.get("metadata", {})
-            law = metadata.get("law", "Unknown Law")
-            sec = metadata.get("section_number", "N/A")
-            sources.append(f"{law} - Section {sec}")
+    return jsonify({"answer": answer})
 
-        source_text = "\n".join(sorted(set(sources))) if sources else "No sources available"
 
-        return f"{answer}\n\n📚 Sources:\n{source_text}"
-
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-# -------- GRADIO UI -------- #
-with gr.Blocks() as demo:
-    gr.Markdown("# ⚖️ Indian Law AI Assistant")
-    gr.Markdown("Ask any question about Indian law.")
-
-    question_input = gr.Textbox(
-        placeholder="Ask about Indian law...",
-        lines=3,
-        label="Your Question"
-    )
-
-    submit_btn = gr.Button("Ask")
-
-    answer_output = gr.Textbox(
-        label="Answer",
-        lines=12
-    )
-
-    submit_btn.click(
-        legal_ai,
-        inputs=question_input,
-        outputs=answer_output
-    )
-
-    question_input.submit(
-        legal_ai,
-        inputs=question_input,
-        outputs=answer_output
-    )
-
-# -------- LAUNCH (RENDER READY) -------- #
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    demo.launch(server_port=port, share=True)
+    app.run(debug=True)
