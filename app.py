@@ -22,12 +22,22 @@ def ask_ollama(prompt):
 
 # -------- QUERY FILTER -------- #
 def is_legal_query(query):
-    keywords = [
+    query = query.lower()
+
+    legal_keywords = [
         "section", "ipc", "crpc", "bns", "law", "act",
         "article", "legal", "court", "police",
         "arrest", "bail", "crime", "fir"
     ]
-    return any(k in query.lower() for k in keywords)
+
+    problem_keywords = [
+        "stolen", "theft", "robbed", "fraud", "scam",
+        "harassment", "assault", "cheated", "threat",
+        "kidnap", "murder", "violence", "abuse",
+        "lost phone", "stole", "cybercrime"
+    ]
+
+    return any(k in query for k in legal_keywords + problem_keywords)
 
 
 # -------- ROUTES -------- #
@@ -63,17 +73,17 @@ def ask():
     prompt = f"""
 You are an expert Indian legal assistant.
 
-Rules:
-- Answer ONLY using the legal context below
-- Do NOT make up laws
-- If answer is not in context, say:
-  "I don't have enough legal information."
+If user describes a problem:
+- Explain the relevant law
+- Tell what action they should take (FIR, police, etc.)
+
+Use ONLY the legal context below.
 
 ---------------------
 {context}
 ---------------------
 
-Question: {user_question}
+User Problem: {user_question}
 
 Answer in simple language:
 """
